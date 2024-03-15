@@ -1,0 +1,120 @@
+{
+  "name": "nm-movie",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/nm-movie",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/nm-movie"
+      },
+      "configurations": {
+        "development": {
+          "outputPath": "apps/nm-movie"
+        },
+        "production": {}
+      },
+      "dependsOn": ["build-custom-server"]
+    },
+    "serve": {
+      "executor": "@nx/next:server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "nm-movie:build",
+        "dev": true,
+        "customServerTarget": "nm-movie:serve-custom-server"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "nm-movie:build:development",
+          "dev": true,
+          "customServerTarget": "nm-movie:serve-custom-server:development"
+        },
+        "production": {
+          "buildTarget": "nm-movie:build:production",
+          "dev": false,
+          "customServerTarget": "nm-movie:serve-custom-server:production"
+        }
+      }
+    },
+    "export": {
+      "executor": "@nx/next:export",
+      "options": {
+        "buildTarget": "nm-movie:build:production"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/nm-movie/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/nm-movie/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "build-custom-server": {
+      "executor": "@nx/js:tsc",
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/nm-movie",
+        "main": "apps/nm-movie/server/main.ts",
+        "tsConfig": "apps/nm-movie/tsconfig.server.json",
+        "clean": false,
+        "assets": []
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve-custom-server": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "nm-movie:build-custom-server"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "nm-movie:build-custom-server:development"
+        },
+        "production": {
+          "buildTarget": "nm-movie:build-custom-server:production"
+        }
+      }
+    },
+    "container": {
+      "executor": "@nx-tools/nx-container:build",
+      "dependsOn": ["build"],
+      "options": {
+        "engine": "docker",
+        "metadata": {
+          "images": ["nm-movie"],
+          "load": true,
+          "tags": [
+            "type=schedule",
+            "type=ref,event=branch",
+            "type=ref,event=tag",
+            "type=ref,event=pr",
+            "type=sha,prefix=sha-"
+          ]
+        }
+      }
+    }
+  },
+  "tags": []
+}
